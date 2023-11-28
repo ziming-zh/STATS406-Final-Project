@@ -1,0 +1,277 @@
+---
+title: "Avg"
+output: html_document
+date: "2023-11-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+library(tidyverse)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+# Read data from CSV files
+data_list <- lapply(0:9, function(i) read.csv(paste0(i, "_data.csv")))
+
+# Create a violin plot for "circum"
+ggplot(data_list[[1]], aes(x = factor(1), y = circum)) +
+  geom_violin() +
+  labs(title = "Violin Plot for circum")
+
+```
+```{r}
+# Read data from files into a list
+file_paths <- list.files(pattern = "_data.csv", full.names = TRUE)
+data_list <- lapply(file_paths, read.csv)
+names(data_list) <- file_paths
+
+# Function to calculate median and quantiles
+calculate_summary_stats <- function(x) {
+  median_val <- median(x)
+  q25 <- quantile(x, 0.25)
+  q75 <- quantile(x, 0.75)
+  return(c(median = median_val, q25 = q25, q75 = q75))
+}
+# Set up a multiplot function
+# Plot combined violin plots for each variable
+circum_plots <- lapply(data_list, function(data) {
+  ggplot(data, aes(x = 1, y = circum)) +
+    geom_violin() +  ylim(c(0, 150))+
+    labs(title = "")+theme_minimal() +
+      theme(axis.title.x = element_blank(),  axis.title.y = element_blank(), # Remove x-axis label
+        axis.text.x = element_blank())   # Remove x-axis ticks and text
+})
+
+num_size_plots <- lapply(data_list, function(data) {
+  ggplot(data, aes(x = 1, y = num_size)) +
+    geom_violin() + ylim(c(0, 0.4)) +
+    labs(title = "")+theme_minimal() +
+      theme(axis.title.x = element_blank(),  # Remove x-axis label
+        axis.text.x = element_blank(),axis.title.y = element_blank())   # Remove x-axis ticks and text
+})
+
+circum_size_plots <- lapply(data_list, function(data) {
+  ggplot(data, aes(x=1,  y = circum/num_size)) +
+    geom_violin() + ylim(c(200, 1000)) +
+    labs(title = "")+theme_minimal() +
+      theme(axis.title.x = element_blank(),  # Remove x-axis label
+        axis.text.x = element_blank(),axis.title.y = element_blank())   # Remove x-axis ticks and text
+})
+
+# Combine the plots for each variable into one figure
+combined_circum <- multiplot(plotlist = circum_plots, cols = 10)
+combined_num_size <- multiplot(plotlist = num_size_plots, cols = 10)
+combined_circum_size <- multiplot(plotlist = circum_size_plots, cols = 10)
+
+# Arrange the combined plots vertically
+combined_plots <- multiplot(combined_circum, combined_num_size, combined_circum_size, cols = 1)
+combined_plots
+
+```
+```{r}
+# Read data from files into a list
+file_paths <- list.files(pattern = "_data.csv", full.names = TRUE)
+data_list <- lapply(file_paths, read.csv)
+names(data_list) <- file_paths
+
+# Function to calculate median and quantiles
+calculate_summary_stats <- function(x) {
+  median_val <- median(x)
+  q25 <- quantile(x, 0.25)
+  q75 <- quantile(x, 0.75)
+  return(c(median = median_val, q25 = q25, q75 = q75))
+}
+
+# Set up a multiplot function
+multiplot <- function(..., plotlist = NULL, file, cols = 1, layout = NULL) {
+  require(grid)
+
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+
+  numPlots = length(plots)
+
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+
+  if (numPlots == 1) {
+    print(plots[[1]])
+
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+# Combine the plots for each variable into one figure with quantile points and added color
+combined_circum <- multiplot(
+  plotlist = lapply(data_list, function(data) {
+    ggplot(data, aes(x = 1, y = circum)) +
+      geom_violin(fill = "skyblue", color = "darkblue") +
+      geom_point(aes(x = 1, y = median(circum)), color = "red", size = 2) +
+      geom_point(aes(x = 1, y = quantile(circum, 0.25)), color = "darkblue", size = 2) +
+      geom_point(aes(x = 1, y = quantile(circum, 0.75)), color = "darkblue", size = 2) +
+      ylim(c(0, 150)) +
+      labs(title = "") + theme_minimal() +
+      theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank()
+      )
+  }),
+  cols = 10
+)
+
+combined_num_size <- multiplot(
+  plotlist = lapply(data_list, function(data) {
+    ggplot(data, aes(x = 1, y = num_size)) +
+      geom_violin(fill = "lightcoral", color = "darkred") +
+      geom_point(aes(x = 1, y = median(num_size)), color = "blue", size = 2) +
+      geom_point(aes(x = 1, y = quantile(num_size, 0.25)), color = "orange", size = 2) +
+      geom_point(aes(x = 1, y = quantile(num_size, 0.75)), color = "orange", size = 2) +
+      ylim(c(0, 0.4)) +
+      labs(title = "") + theme_minimal() +
+      theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank()
+      )
+  }),
+  cols = 10
+)
+
+combined_circum_size <- multiplot(
+  plotlist = lapply(data_list, function(data) {
+    ggplot(data, aes(x = 1, y = circum / num_size)) +
+      geom_violin(fill = "lightgreen", color = "darkgreen") +
+      geom_point(aes(x = 1, y = median(circum / num_size)), color = "purple", size = 2) +
+      geom_point(aes(x = 1, y = quantile(circum / num_size, 0.25)), color = "darkgreen", size = 2) +
+      geom_point(aes(x = 1, y = quantile(circum / num_size, 0.75)), color = "darkgreen", size = 2) +
+      ylim(c(200, 1000)) +
+      labs(title = "") + theme_minimal() +
+      theme(
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank()
+      )
+  }),
+  cols = 10
+)
+
+# Arrange the combined plots vertically
+combined_plots <- multiplot(
+  combined_circum,
+  combined_num_size,
+  combined_circum_size,
+  cols = 1
+)
+
+combined_plots
+
+```
+```{r}
+
+#resample from circum_9
+circum_9 <- read.csv("9_data.csv")$circum
+
+#resample from size_9
+size_9 <- read.csv("9_data.csv")$num_size
+
+#resample from ratio_9
+ratio_9 <- circum_9/size_9
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+# Function to perform KS test with resampling
+ks_test_resampling <- function(data, variable, n_resamples = 10000) {
+  observed_statistic <- ks.test(data, "pnorm")$statistic
+  
+  resample_statistics <- replicate(n_resamples, {
+    sampled_data <- sample(data, replace = TRUE)
+    ks.test(sampled_data, "pnorm")$statistic
+  })
+  
+  p_value <- mean(resample_statistics >= observed_statistic)
+  
+  return(list(
+    observed_statistic = observed_statistic,
+    resample_statistics = resample_statistics,
+    p_value = p_value
+  ))
+}
+
+# Perform KS test with resampling on circum_9
+ks_result <- ks_test_resampling(circum_9, "circum_9")
+ks_result <- ks_test_resampling(size_9, "circum_9")
+ks_result <- ks_test_resampling(ratio_9, "circum_9")
+
+
+```
+
+```{r}
+library(boot)
+
+# Define the function for the Kolmogorov-Smirnov test
+ks_test <- function(data, indices) {
+  # Extract the data based on the indices
+  sampled_data <- data[indices]
+  
+  # Perform the KS test on the sampled data
+  ks.test(sampled_data, "pnorm")$statistic
+}
+
+
+# Set the number of bootstrap samples
+num_samples <- 100
+
+bootstrap_results <- boot(circum_9, ks_test, R = num_samples)
+bootstrap_results
+
+
+hist(bootstrap_results$t, main = "Distribution of KS Statistic", xlab = "KS Statistic")
+
+
+
+bootstrap_results <- boot(size_9, ks_test, R = num_samples)
+bootstrap_results
+
+
+hist(bootstrap_results$t, main = "Distribution of KS Statistic", xlab = "KS Statistic")
+
+
+
+bootstrap_results <- boot(ratio_9, ks_test, R = num_samples)
+bootstrap_results
+
+
+hist(bootstrap_results$t, main = "Distribution of KS Statistic", xlab = "KS Statistic")
+library(e1071)
+skewness(circum_9)
+skewness(size_9)
+skewness(ratio_9)
+
+```

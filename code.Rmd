@@ -1,0 +1,597 @@
+---
+title: "406Test"
+output: html_document
+date: "2023-11-24"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(MASS)
+library(dplyr)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+
+high_pred_conf1 <- read.csv("0-0.1-500.csv")
+high_pred_conf2 <- read.csv("0.9-1-500.csv")
+med_pred_conf <- read.csv("0.3-0.7-158.csv")
+# Combine the three datasets
+combined_data <- rbind(high_pred_conf1, high_pred_conf2, med_pred_conf)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+# Sample 100 points from each column
+sampled_data <- combined_data %>%
+  group_by(pred_prob) %>%
+  sample_n(100, replace = TRUE)
+
+# Plot scattered plots using ggplot2
+ggplot(sampled_data, aes(x = pred_prob, y = circum)) +
+  geom_point() +
+  labs(title = "Scattered Plot of Columns with respect to pred_prob")
+# Plot scattered plots using ggplot2
+ggplot(sampled_data, aes(x = pred_prob, y = num_size)) +
+  geom_point() +
+  labs(title = "Scattered Plot of Columns with respect to pred_prob")
+ggplot(sampled_data, aes(x = pred_prob, y = circum/num_size)) +
+  geom_point() +
+  labs(title = "Scattered Plot of Columns with respect to pred_prob")
+```
+```{r}
+ggplot(combined_data, aes(x = circum)) + theme_classic()+
+  geom_histogram(binwidth = 2, fill = "burlywood", color = "black") +
+  labs(title = "Histogram of circum")
+ggplot(sampled_data, aes(x = circum)) +
+  geom_histogram(binwidth = 2, fill = "skyblue", color = "black") +
+  labs(title = "Histogram of circum")
+ggplot(combined_data, aes(x = circum/num_size)) + theme_classic()+
+  geom_histogram(binwidth = 13, fill = "#B19CD9", color = "black") +
+  labs(title = "Histogram of circum")
+
+```
+```{r}
+shapiro_test_result <- shapiro.test(combined_data$circum)
+print(shapiro_test_result)
+shapiro_test_result <- shapiro.test(combined_data$num_size)
+print(shapiro_test_result)
+shapiro_test_result <- shapiro.test(combined_data$circum/combined_data$num_size)
+print(shapiro_test_result)
+
+qqnorm(combined_data$circum, main = "Q-Q Plot")
+qqline(combined_data$circum, col = 2)
+qqnorm(combined_data$num_size, main = "Q-Q Plot")
+qqline(combined_data$num_size, col = 2)
+qqnorm(combined_data$circum/combined_data$num_size, main = "Q-Q Plot")
+qqline(combined_data$circum/combined_data$num_size, col = 2)
+```
+
+```{r}
+ggplot(combined_data, aes(x = num_size))+ theme_classic() +
+  geom_histogram(binwidth = 0.01, fill = "lightgrey", color = "black") +
+  labs(title = "Histogram of size")
+ggplot(sampled_data, aes(x = num_size)) +
+  geom_histogram(binwidth = 0.01, fill = "skyblue", color = "black") +
+  labs(title = "Histogram of size")
+```
+
+```{r}
+ggplot(combined_data, aes(x = pred_prob)) + theme_bw()+
+  geom_histogram(binwidth = 0.01, fill = "purple", color = "black") +
+  labs(title = "Histogram of pred_prob")
+ggplot(sampled_data, aes(x = pred_prob)) +
+  geom_histogram(binwidth = 0.01, fill = "skyblue", color = "black") +
+  geom_density(color = "red") +
+  labs(title = "Histogram of pred_prob")
+```
+**We need to use importance sampling here, or MCMC method**
+```{r}
+ggplot(high_pred_conf1, aes(x = pred_prob))  + theme_bw()+
+  geom_histogram(binwidth = 0.001, fill = "skyblue", color = "black") +
+  labs(title = "Histogram of pred_prob")
+ggplot(high_pred_conf2, aes(x = pred_prob)) + theme_bw()+
+  geom_histogram(binwidth = 0.001, fill = "lightgrey", color = "black") +
+  labs(title = "Histogram of pred_prob")
+ggplot(med_pred_conf, aes(x = pred_prob)) + theme_bw()+
+  geom_histogram(binwidth = 0.03, fill = "lightpink", color = "black") +
+  labs(title = "Histogram of pred_prob")
+```
+```{r}
+prediction<-read.csv("prediction.csv")$X9
+hist(prediction)
+```
+
+```{r}
+# Create the histogram
+histogram <- ggplot(high_pred_conf1, aes(x = pred_prob)) +
+  geom_histogram(binwidth = 0.001, fill = "skyblue", color = "black") +
+  labs(title = "Histogram of pred_prob")
+
+density_data <- ggplot_build(histogram)$data[[1]]
+x=density_data$x
+y=density_data$count
+
+
+# Define the geometric distribution fitting function
+fit_geom <- fitdistr(x, "geometric", weights = y)
+
+p<-fit_geom$estimate
+```
+```{r}
+# Set the probability of success
+# Generate values for the first 10 trials
+k_values <- 1:10
+
+# Calculate the PMF for each value of k
+pmf_values <- dgeom(k_values - 1, prob = p)
+
+# Create a bar plot
+barplot(pmf_values, names.arg = k_values, col = "skyblue", xlab = "Number of Trials", ylab = "Probability", main = "Geometric Distribution with p")
+# Create a bar plot
+barplot(y[1:10], main="Bar Plot of Count", xlab="X-axis Label", ylab="Y-axis Label", col="blue")
+
+```
+
+```{r}
+# Create the histogram
+histogram <- ggplot(high_pred_conf2, aes(x = pred_prob)) +
+  geom_histogram(binwidth = 0.001, fill = "skyblue", color = "black") +
+  labs(title = "Histogram of pred_prob")
+
+density_data <- ggplot_build(histogram)$data[[1]]
+x=density_data$x
+y=rev(density_data$count)
+
+
+# Define the geometric distribution fitting function
+fit_geom <- fitdistr(x, "geometric", weights = y)
+
+p<-0.26
+
+k_values <- 1:10
+
+# Calculate the PMF for each value of k
+pmf_values <- dgeom(k_values - 1, prob = p)
+
+# Create a bar plot
+barplot(pmf_values, names.arg = k_values, col = "skyblue", xlab = "Number of Trials", ylab = "Probability", main = "Geometric Distribution with p")
+# Create a bar plot
+barplot(y[1:10], main="Bar Plot of Count", xlab="X-axis Label", ylab="Y-axis Label", col="blue")
+```
+### Accept-reject Sampling
+
+
+```{r}
+
+ggplot(high_pred_conf1, aes(x = pred_prob)) +
+  geom_histogram(binwidth = 0.001, fill = "skyblue", color = "black") +
+  labs(title = "Histogram of pred_prob")
+ggplot(high_pred_conf2, aes(x = pred_prob)) +
+  geom_histogram(binwidth = 0.001, fill = "skyblue", color = "black") +
+  labs(title = "Histogram of pred_prob")
+# Parameters
+beta <- 1500  # Adjust beta as needed
+n_samples <- 150
+
+# Generate random samples from exponential distribution
+raw_samples <- rexp(n_samples, rate = beta)
+
+# Truncate values to [0, 1]
+truncated_samples <- pmin(pmax(raw_samples, 0), 1)
+
+# Plot the truncated exponential distribution
+hist(truncated_samples, breaks = 30, freq = FALSE, xlim = c(0, 0.1),
+     main = "Truncated Exponential Distribution",
+     xlab = "Values", ylab = "Density",
+     col = "lightblue", border = "black")
+
+# Add a curve for the density function of the truncated exponential distribution
+curve(dexp(x, rate = beta) / (1 - pexp(1, rate = beta)),add = TRUE, col = "red", lwd = 2)
+
+# Add legend
+legend("topright", legend = c("Truncated Exponential", "Exponential"), col = c("lightblue", "red"), lty = 1, lwd = 2)
+
+# Parameters
+beta <- 500  # Adjust beta as needed
+n_samples <- 150
+
+# Generate random samples from exponential distribution
+raw_samples <- rexp(n_samples, rate = beta)
+
+# Truncate values to [0, 1]
+truncated_samples <- pmin(pmax(raw_samples, 0), 1)
+
+# Plot the truncated exponential distribution
+hist(truncated_samples, breaks = 30, freq = FALSE, xlim = c(0, 0.1),
+     main = "Truncated Exponential Distribution",
+     xlab = "Values", ylab = "Density",
+     col = "lightblue", border = "black")
+
+# Add a curve for the density function of the truncated exponential distribution
+curve(500*dexp(x, rate = beta) / (1 - pexp(1, rate = beta)),add = TRUE, col = "red", lwd = 2)
+
+# Add legend
+legend("topright", legend = c("Truncated Exponential", "Exponential"), col = c("lightblue", "red"), lty = 1, lwd = 2)
+
+```
+
+
+```{r}
+library(boot)
+accept_reject_sampling <- function(data, beta) {
+  while (TRUE) {
+    sample <- data[sample(nrow(data), 1), ]
+    u <- runif(1)
+    if (u < exp(-beta * sample$pred_prob)) {
+      return(sample)
+    }
+  }
+}
+
+
+beta1 <- 1500  # Adjust beta1 as needed
+sampled_high_pred_conf1 <- replicate(150, accept_reject_sampling(high_pred_conf1, beta1), simplify = "data.frame")
+
+
+accept_reject_sampling <- function(data, beta) {
+  while (TRUE) {
+    sample <- data[sample(nrow(data), 1), ]
+    u <- runif(1)
+    if (u < exp(-beta * (1-sample$pred_prob))) {
+      return(sample)
+    }
+  }
+}
+
+
+beta1 <- 1500  # Adjust beta1 as needed
+sampled_high_pred_conf1 <- replicate(150, accept_reject_sampling(high_pred_conf1, beta1), simplify = "data.frame")
+
+```
+
+
+```{r}
+high_pred_conf1<-read.csv("sampled_high_pred_conf1.csv")
+high_pred_conf2<-read.csv("sampled_high_pred_conf2.csv")
+n_samples<-150
+med_pred_conf<-med_pred_conf[sample(nrow(med_pred_conf), n_samples), ]
+
+```
+
+
+```{r}
+boot_stats <- function(data, index) {
+  subset_data <- data[index]  # Use the index to subset the data
+  mean_val <- mean(subset_data)
+  var_val <- var(subset_data)
+  return(c(mean_val, var_val))
+}
+
+bootstrap_auto <- function(data1){
+  bootstrap_result_data1 <- boot(data1, boot_stats, R = 1000)
+  mean_data1 <- bootstrap_result_data1$t[, 1]
+var_data1 <- bootstrap_result_data1$t[, 2]
+ci_data1 <- boot.ci(bootstrap_result_data1, type = "bca")
+mn<-(mean(mean_data1))
+result <- t.test(mean_data1)
+
+# Print the confidence interval
+mean_confint <- (result$conf.int)
+vr<-mean(var_data1)
+result <- t.test(var_data1)
+
+# Print the confidence interval
+var_confint <- (result$conf.int)
+return(c(mn,mean_confint[1],mean_confint[2],vr,var_confint[1], var_confint[2]))
+
+
+}
+mlist <- list()
+
+# Add results to the list
+mlist[[1]] <- bootstrap_auto(high_pred_conf1$circum)
+mlist[[2]] <- bootstrap_auto(high_pred_conf2$circum)
+mlist[[3]] <- bootstrap_auto(med_pred_conf$circum)
+mlist[[4]] <- bootstrap_auto(high_pred_conf1$num_size)
+mlist[[5]] <- bootstrap_auto(high_pred_conf2$num_size)
+mlist[[6]] <- bootstrap_auto(med_pred_conf$num_size)
+mlist[[7]] <- bootstrap_auto(high_pred_conf1$circum/high_pred_conf1$num_size)
+mlist[[8]] <- bootstrap_auto(high_pred_conf2$circum/high_pred_conf2$num_size)
+mlist[[9]] <- bootstrap_auto(med_pred_conf$circum/ med_pred_conf$num_size)
+
+# Convert the list to a data frame
+result_table <- data.frame(do.call(rbind, mlist))
+
+# Print the resulting table
+print(result_table)
+write.csv(result_table, file = "file.csv", row.names = FALSE)
+```
+
+
+```{r}
+# Function to calculate mean circum difference
+mean_diff <- function(data1, data2, indices) {
+  mean_circum_diff <- mean(data1$circum[indices]) - mean(data2$circum[indices])
+  return(mean_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_circum_results <- boot(data = high_pred_conf1, statistic = mean_diff, R = 1000, data2 = high_pred_conf2)
+# Plot the bootstrap distribution
+hist(bootstrap_circum_results$t, main = "Bootstrap Distribution of Mean Circum Difference", xlab = "Mean Circum Difference")
+
+# Function to calculate mean size difference
+mean_diff <- function(data1, data2, indices) {
+  mean_circum_diff <- mean(data1$num_size[indices]) - mean(data2$num_size[indices])
+  return(mean_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_size_results <- boot(data = high_pred_conf1, statistic = mean_diff, R = 1000, data2 = high_pred_conf2)
+# Plot the bootstrap distribution
+hist(bootstrap_size_results$t, main = "Bootstrap Distribution of Mean Size Difference", xlab = "Mean Size Difference")
+
+
+# Calculate p-value
+p_value <- mean(bootstrap_circum_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+p_value <- mean(bootstrap_size_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+
+```
+```{r}
+# Function to calculate var circum difference
+var_diff <- function(data1, data2, indices) {
+  var_circum_diff <- var(data1$circum[indices]) - var(data2$circum[indices])
+  return(var_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_circum_results <- boot(data = high_pred_conf1, statistic = var_diff, R = 1000, data2 = high_pred_conf2)
+# Plot the bootstrap distribution
+hist(bootstrap_circum_results$t, main = "Bootstrap Distribution of var Circum Difference", xlab = "var Circum Difference")
+
+# Function to calculate var size difference
+var_diff <- function(data1, data2, indices) {
+  var_circum_diff <- var(data1$num_size[indices]) - var(data2$num_size[indices])
+  return(var_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_size_results <- boot(data = high_pred_conf1, statistic = var_diff, R = 1000, data2 = high_pred_conf2)
+# Plot the bootstrap distribution
+hist(bootstrap_size_results$t, main = "Bootstrap Distribution of var Size Difference", xlab = "var Size Difference")
+
+
+
+
+# Calculate p-value
+p_value <- mean(bootstrap_circum_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+p_value <- mean(bootstrap_size_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+
+```
+```{r}
+# Function to calculate mean circum difference
+mean_diff <- function(data1, data2, indices) {
+  mean_circum_diff <- mean(data1$circum[indices]) - mean(data2$circum[indices])
+  return(mean_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_circum_results <- boot(data = med_pred_conf, statistic = mean_diff, R = 1000, data2 = high_pred_conf1)
+# Plot the bootstrap distribution
+hist(bootstrap_circum_results$t, main = "Bootstrap Distribution of Mean Circum Difference", xlab = "Mean Circum Difference")
+
+# Function to calculate mean size difference
+mean_diff <- function(data1, data2, indices) {
+  mean_circum_diff <- mean(data1$num_size[indices]) - mean(data2$num_size[indices])
+  return(mean_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_size_results <- boot(data = med_pred_conf, statistic = mean_diff, R = 1000, data2 = high_pred_conf1)
+# Plot the bootstrap distribution
+hist(bootstrap_size_results$t, main = "Bootstrap Distribution of Mean Size Difference", xlab = "Mean Size Difference")
+
+
+# Calculate p-value
+p_value <- mean(bootstrap_circum_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+p_value <- mean(bootstrap_size_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+
+```
+
+
+```{r}
+# Function to calculate var circum difference
+var_diff <- function(data1, data2, indices) {
+  var_circum_diff <- var(data1$circum[indices]) - var(data2$circum[indices])
+  return(var_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_circum_results <- boot(data = med_pred_conf, statistic = var_diff, R = 1000, data2 = high_pred_conf2)
+# Plot the bootstrap distribution
+hist(bootstrap_circum_results$t, main = "Bootstrap Distribution of var Circum Difference", xlab = "var Circum Difference")
+
+# Function to calculate var size difference
+var_diff <- function(data1, data2, indices) {
+  var_circum_diff <- var(data1$num_size[indices]) - var(data2$num_size[indices])
+  return(var_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_size_results <- boot(data = med_pred_conf, statistic = var_diff, R = 1000, data2 = high_pred_conf2)
+# Plot the bootstrap distribution
+hist(bootstrap_size_results$t, main = "Bootstrap Distribution of var Size Difference", xlab = "var Size Difference")
+
+
+
+
+# Calculate p-value
+p_value <- mean(bootstrap_circum_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+p_value <- mean(bootstrap_size_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+
+```
+
+```{r}
+# Function to calculate mean circum difference
+mean_diff <- function(data1, data2, indices) {
+  mean_circum_diff <- mean(data1$circum[indices]) - mean(data2$circum[indices])
+  return(mean_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_circum_results <- boot(data = med_pred_conf, statistic = mean_diff, R = 1000, data2 = high_pred_conf2)
+# Plot the bootstrap distribution
+hist(bootstrap_circum_results$t, main = "Bootstrap Distribution of Mean Circum Difference", xlab = "Mean Circum Difference")
+
+# Function to calculate mean size difference
+mean_diff <- function(data1, data2, indices) {
+  mean_circum_diff <- mean(data1$num_size[indices]) - mean(data2$num_size[indices])
+  return(mean_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_size_results <- boot(data = med_pred_conf, statistic = mean_diff, R = 1000, data2 = high_pred_conf2)
+# Plot the bootstrap distribution
+hist(bootstrap_size_results$t, main = "Bootstrap Distribution of Mean Size Difference", xlab = "Mean Size Difference")
+
+
+# Calculate p-value
+p_value <- mean(bootstrap_circum_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+p_value <- mean(bootstrap_size_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+
+```
+
+
+```{r}
+# Function to calculate var circum difference
+var_diff <- function(data1, data2, indices) {
+  var_circum_diff <- var(data1$circum[indices]) - var(data2$circum[indices])
+  return(var_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_circum_results <- boot(data = med_pred_conf, statistic = var_diff, R = 1000, data2 = high_pred_conf2)
+# Plot the bootstrap distribution
+hist(bootstrap_circum_results$t, main = "Bootstrap Distribution of var Circum Difference", xlab = "var Circum Difference")
+
+# Function to calculate var size difference
+var_diff <- function(data1, data2, indices) {
+  var_circum_diff <- var(data1$num_size[indices]) - var(data2$num_size[indices])
+  return(var_circum_diff)
+}
+
+# Perform bootstrap resampling
+bootstrap_size_results <- boot(data = med_pred_conf, statistic = var_diff, R = 1000, data2 = high_pred_conf2)
+# Plot the bootstrap distribution
+hist(bootstrap_size_results$t, main = "Bootstrap Distribution of var Size Difference", xlab = "var Size Difference")
+
+
+
+
+# Calculate p-value
+p_value <- mean(bootstrap_circum_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+p_value <- mean(bootstrap_size_results$t > 0)
+cat("P-value:", p_value, "\n")
+
+
+```
+```{r}
+# Create a data frame with the means for each dataset
+mean_data <- data.frame(dataset = c(rep("high_pred_conf1", length(high_pred_conf1$circum)),
+                                   rep("high_pred_conf2", length(high_pred_conf2$circum)),
+                                    rep("med_pred_conf", length(med_pred_conf$circum))),
+                        circum = c(high_pred_conf1$circum, high_pred_conf2$circum, med_pred_conf$circum))
+
+# Plot the kernel density estimate of the mean circum values for both datasets
+density_plot_means <- ggplot(data = mean_data, aes(x = circum, fill = dataset)) + theme_bw()+
+  geom_density(alpha = 0.5) +
+  labs(title = "Kernel Density Plot of Mean Circum Values",
+       x = "Mean Circum Value",
+       y = "Density",
+       fill = "Dataset")+
+  scale_fill_manual(values = c("skyblue", "lightgrey", "lightpink"))
+
+
+
+
+print(density_plot_means)
+
+# Create a data frame with the means for each dataset
+mean_data <- data.frame(dataset = c(rep("high_pred_conf1", length(high_pred_conf1$num_size)),
+                                   rep("high_pred_conf2", length(high_pred_conf2$num_size)),
+                                    rep("med_pred_conf", length(med_pred_conf$num_size))),
+                        size = c(high_pred_conf1$num_size, high_pred_conf2$num_size, med_pred_conf$num_size))
+
+# Plot the kernel density estimate of the mean circum values for both datasets
+density_plot_means <- ggplot(data = mean_data, aes(x = size, fill = dataset)) + theme_bw()+
+  geom_density(alpha = 0.5) +
+  labs(title = "Kernel Density Plot of Mean Size Values",
+       x = "Mean Size Value",
+       y = "Density",
+       fill = "Dataset")+
+  scale_fill_manual(values = c("skyblue", "lightgrey", "lightpink"))
+
+print(density_plot_means)
+
+# Create a data frame with the means for each dataset
+mean_data <- data.frame(dataset = c(rep("high_pred_conf1", length(high_pred_conf1$num_size)),
+                                   rep("high_pred_conf2", length(high_pred_conf2$num_size)),
+                                    rep("med_pred_conf", length(med_pred_conf$num_size))),
+                        ratio = c(high_pred_conf1$circum/high_pred_conf1$num_size, high_pred_conf2$circum/high_pred_conf2$num_size, med_pred_conf$circum/med_pred_conf$num_size))
+
+# Plot the kernel density estimate of the mean circum values for both datasets
+density_plot_means <- ggplot(data = mean_data, aes(x = ratio, fill = dataset)) + theme_bw()+
+  geom_density(alpha = 0.5) +
+  labs(title = "Kernel Density Plot of Circum/Size Ratio",
+       x = "Mean Circum/Size Ratio",
+       y = "Density",
+       fill = "Dataset")+
+  scale_fill_manual(values = c("skyblue", "lightgrey", "lightpink"))
+print(density_plot_means)
+
+```
+```{r}
+library(e1071)
+combined_data<-cbind(high_pred_conf1,high_pred_conf2,med_pred_conf)
+skewness(combined_data$circum)
+skewness(combined_data$num_size)
+skewness(combined_data$circum/combined_data$num_size)
+
+
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+See the correlation between the different size factor and how they influence each other
