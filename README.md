@@ -1,6 +1,6 @@
 # Computational Statistics Analysis on MNIST Digit Classification Result - 
 
-### How Could Object Shape & Size Pose Prediction Biases?
+### How Could Object Shape & Size Relate to Prediction Biases?
 
 ###### * Umich STATS Fall 23 Final Project
 
