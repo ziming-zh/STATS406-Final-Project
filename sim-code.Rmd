@@ -1,0 +1,245 @@
+---
+title: "Simulation-Code"
+output: html_document
+date: "2023-12-08"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r cars}
+# Set seed for reproducibility
+set.seed(20231208)
+
+# Number of permutations
+n_permutations <- 10000
+
+# Simulate data for exponential distributions
+data1 <- rexp(100, rate = 1/10)
+data2 <- rexp(100, rate = 1/9)
+
+# Compute observed test statistic
+observed_statistic <- mean(data1) - mean(data2)
+
+# Function to calculate the test statistic for each permutation
+perm_test_statistic <- function(data1, data2) {
+  mean(data1) - mean(data2)
+}
+
+# Perform permutation test
+perm_results <- replicate(n_permutations, {
+  permuted_data <- sample(c(data1, data2))
+  perm_test_statistic(permuted_data[1:100], permuted_data[101:200])
+})
+
+# Compute p-value
+p_value <- mean(perm_results >= observed_statistic)
+
+# Confidence interval
+conf_interval <- quantile(perm_results, c(0.025, 0.975))
+
+# Power of the test
+power <- mean(perm_results >= observed_statistic)
+
+# Print results
+cat("Observed Test Statistic:", observed_statistic, "\n")
+cat("Permutation Test P-value:", p_value, "\n")
+cat("95% Confidence Interval:", conf_interval, "\n")
+cat("Power of the Test:", power, "\n")
+
+
+```
+```{r}
+
+
+# Step 2: Create Histograms
+hist(data1, col = "lightblue", main = "Histograms of Exponential Distributions",
+     xlab = "Values", ylab = "Frequency", xlim = range(c(data1, data2)))
+hist(data2, col = "lightcoral", add = TRUE)
+legend("topright", legend = c("beta = 2", "beta = 3"), fill = c("lightblue", "lightcoral"))
+
+```
+
+
+```{r}
+# Load required libraries
+library(ggplot2)
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Step 1: Generate data
+n1 <- 100  # Sample size for distribution 1
+n2 <- 100  # Sample size for distribution 2
+beta1 <- 3  # Decay rate for distribution 1
+beta2 <- 2  # Decay rate for distribution 2
+
+data1 <- rexp(n1, rate = 1/beta1)
+data2 <- rexp(n2, rate = 1/beta2)
+
+# Step 2: Compute observed test statistic
+obs_stat <- abs(1/beta1 - 1/beta2)
+
+# Step 3-4: Permutation test
+num_permutations <- 1000
+permuted_stats <- numeric(num_permutations)
+
+for (i in 1:num_permutations) {
+  # Permute the labels
+  permuted_data <- c(data1, data2)[sample(c(rep(1, n1), rep(2, n2)))]
+  
+  # Recompute test statistic for each permutation
+  permuted_stat <- abs(mean(permuted_data[1:n1]) - mean(permuted_data[(n1 + 1):(n1 + n2)]))
+  permuted_stats[i] <- permuted_stat
+}
+
+# Calculate p-value
+p_value <- mean(permuted_stats >= obs_stat)
+
+# Step 5: Confidence interval
+ci_lower <- quantile(permuted_stats, 0.025)
+ci_upper <- quantile(permuted_stats, 0.975)
+
+# Step 6: Power of the test
+# You can simulate data under alternative hypothesis and repeat the process
+
+# Plot the results
+ggplot() +
+  geom_histogram(aes(x = permuted_stats), bins = 30, fill = "skyblue", color = "black") +
+  geom_vline(xintercept = obs_stat, color = "red", linetype = "dashed", size = 1) +
+  geom_vline(xintercept = ci_lower, linetype = "dashed", size = 1, color = "blue") +
+  geom_vline(xintercept = ci_upper, linetype = "dashed", size = 1, color = "blue") +
+  ggtitle("Permutation Test for Decay Rates") +
+  labs(x = "Permutation Test Statistic", y = "Frequency") +
+  theme_minimal()
+
+# Display results
+cat("Observed Test Statistic:", obs_stat, "\n")
+cat("P-value:", p_value, "\n")
+cat("Power of the test:", 1-p_value, "\n")
+cat("95% Confidence Interval:", ci_lower, "to", ci_upper, "\n")
+
+
+```
+```{r}
+# Set seed for reproducibility
+# Step 1: Generate Data
+n1 <- 100  # Sample size for distribution 1
+n2 <- 100  # Sample size for distribution 2
+beta1 <- 3  # Decay rate for distribution 1
+beta2 <- 2  # Decay rate for distribution 2
+
+data1 <- rexp(n1, rate = 1/beta1)
+data2 <- rexp(n2, rate = 1/beta2)
+
+# Step 2: Perform t-test
+t_test_result <- t.test(data1, data2)
+
+# Step 3: Calculate Confidence Interval
+ci <- t_test_result$conf.int
+
+# Step 4: Calculate Power of the Test
+# Simulate data multiple times
+num_simulations <- 1000
+power <- replicate(num_simulations, {
+  sim_data1 <- rexp(n1, rate = 1/beta1)
+  sim_data2 <- rexp(n2, rate = 1/beta2)
+  t_test <- t.test(sim_data1, sim_data2)
+  t_test$p.value < 0.05  # Check if the null hypothesis is rejected
+})
+
+# Calculate the proportion of times the null hypothesis is rejected
+power <- mean(power)
+
+# Print results
+cat("P-Value:", t_test_result$p.value, "\n")
+cat("Confidence Interval:", ci, "\n")
+cat("Power of the Test:", power, "\n")
+```
+```{r}
+# Step 2: Perform Wilcoxon Rank-Sum Test
+wilcox_test_result <- wilcox.test(data1, data2)
+# Step 4: Create Plot to Compare Ranks
+stripchart(list(Distribution1 = data1, Distribution2 = data2),
+           vertical = TRUE, method = "jitter", pch = 16,
+           main = "Comparison of Ranks",
+           xlab = "Distribution", ylab = "Values",
+           col = c("blue", "red"))
+
+# Add a line to indicate the median value
+abline(h = median(data1), col = "blue", lty = 2)
+abline(h = median(data2), col = "red", lty = 2) 
+num_simulations <- 1000
+power <- replicate(num_simulations, {
+  sim_data1 <- rexp(n1, rate = 1/beta1)
+  sim_data2 <- rexp(n2, rate = 1/beta2)
+  wilcox_test <- wilcox.test(sim_data1, sim_data2)
+  wilcox_test$p.value < 0.05  # Check if the null hypothesis is rejected
+})
+
+# Calculate the proportion of times the null hypothesis is rejected
+power <- mean(power)
+
+# Print results
+cat("P-Value:", wilcox_test_result$p.value, "\n")
+cat("Power of the Test:", power, "\n")
+
+```
+
+### Bootstrapping
+
+```{r}
+# Function to perform t-test with bootstrapping
+t_test_bootstrap <- function(index, data) {
+  x1 <- data$x1[index]
+  x2 <- data$x2[index]
+  t_stat <- t.test(x1, x2)$statistic
+  return(t_stat)
+}
+# Function to generate data from normal distributions
+generate_data <- function(sample_size, variance) {
+  x1 <- rnorm(sample_size, mean = 0, sd = sqrt(5))
+  x2 <- rnorm(sample_size, mean = 0, sd = sqrt(variance))
+  return(data.frame(x1 = x1, x2 = x2))
+}
+
+# Function to calculate power for different variances
+calculate_power <- function(variances, sample_size, num_bootstraps) {
+  power_values <- numeric(length(variances))
+  
+  for (i in seq_along(variances)) {
+    variance <- variances[i]
+    data <- generate_data(sample_size, variance)
+    
+    # Perform bootstrap t-test
+    boot_results <- boot(data, t_test_bootstrap, R = num_bootstraps)
+    
+    # Calculate power
+    power <- mean(boot_results$t > 0)
+    
+    power_values[i] <- power
+  }
+  
+  return(power_values)
+}
+
+# Set parameters
+variances <- seq(0, 10, by = 0.5)
+sample_size <- 100
+num_bootstraps <- 1000
+
+# Calculate power for different variances
+power_curve <- calculate_power(variances, sample_size, num_bootstraps)
+
+# Visualize the power curve
+power_df <- data.frame(variance = variances, power = power_curve)
+ggplot(power_df, aes(x = variance, y = power)) +
+  geom_line() +
+  labs(title = "Power Curve of t-test with Bootstrapping",
+       x = "Variance (var(x2))",
+       y = "Power") +
+  theme_minimal()
+```
