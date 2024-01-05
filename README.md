@@ -2,7 +2,7 @@
 
 ### How Could Object Shape & Size Relate to Prediction Biases?
 
-###### * Umich STATS Fall 23 Final Project
+###### * Umich STATS 406 *(Computational Method in Statistics)* Fall 23 Final Project
 
 ###### - Generated and organized by Ziming Zhou
 
@@ -28,4 +28,4 @@ This project utilizes advanced computational statistical methods to meticulously
 
 ## Final Project Paper
 
-To be uploaded to the repo after official grading.
+You can view our final project paper [here](./Final_Report/Report.pdf)
