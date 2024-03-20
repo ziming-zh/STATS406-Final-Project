@@ -6,6 +6,8 @@
 
 ###### - Generated and organized by Ziming Zhou
 
+Project content description could be found [here](https://ziming-zh.github.io/posts/STATS406-computational-statistics-to-understand-bias-in-nn-prediction/)
+
 ## Project Summary
 
 This project utilizes advanced computational statistical methods to meticulously investigate biases stemming from object size and shape in image classification, with a focus on the MNIST dataset. The methodology incorporates a robust approach to ensure the reliability and depth of the analysis. Quantile-Quantile plots, Violin plots, and bootstrapped skewness diagnostics are employed for the rigorous examination of feature normality, allowing for a detailed scrutiny of the distributional characteristics of extracted features. Stratified sampling from long-tailed distributions provides a solid framework for assessing biases in prediction probabilities. The permutation test for asymmetricity detection effectively stratifies the probability range, revealing nuanced patterns of bias in low-confidence and high-confidence samples. Simulation results, including the effective use of permutation tests to examine decay rates and bootstrapping for analyzing noisy normal distributions, validate the chosen methodologies, underscoring their applicability across diverse scenarios. These computational statistical methods not only enhance the credibility of the analysis but also contribute to the project's overarching goal of unraveling biases in image classification with a nuanced and data-driven approach.
@@ -29,3 +31,5 @@ This project utilizes advanced computational statistical methods to meticulously
 ## Final Project Paper
 
 You can view our final project paper [here](./Final_Report/Report.pdf)
+
+
